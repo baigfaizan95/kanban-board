@@ -2,11 +2,25 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { ThemeProvider } from '@material-ui/core/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import theme from 'styles';
+import WebFont from 'webfontloader';
+
+WebFont.load({
+  google: {
+    families: [
+      'Pangolin:300,400,700,900&display=swap',
+    ],
+  },
+});
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <ThemeProvider theme={theme}>
+    <CssBaseline>
+      <App />
+    </CssBaseline>
+  </ThemeProvider>,
   document.getElementById('root')
 );
 
