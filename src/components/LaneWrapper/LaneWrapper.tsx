@@ -1,8 +1,11 @@
 import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
-import Dragger from 'components/Dragger';
-import { DraggingStyle, NotDraggingStyle } from 'react-beautiful-dnd';
+import {
+  DraggingStyle,
+  NotDraggingStyle,
+  Draggable,
+} from 'react-beautiful-dnd';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import Lane from 'components/Lane';
 
@@ -33,19 +36,18 @@ const getItemStyle = (
 const LaneWrapper = ({ index, id }: { id: string; index: number }) => {
   const classes = styles();
   return (
-    <Dragger draggableId={`wrapper-item-${id}`} index={index}>
+    <Draggable draggableId={`item-${id}`} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
           className={classes.root}
           style={getItemStyle(provided.draggableProps.style || {})}
         >
-          <Lane id={id} />
+          <Lane parentDragHandle={provided.dragHandleProps} id={id} />
         </div>
       )}
-    </Dragger>
+    </Draggable>
   );
 };
 

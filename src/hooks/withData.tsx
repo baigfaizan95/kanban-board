@@ -6,19 +6,19 @@ import React, {
   Dispatch,
   useLayoutEffect,
   useEffect,
+  useState,
 } from 'react';
 import storage from 'utils/storage';
-import { ILane } from 'interfaces/ILane';
 import { IActions, IState } from 'interfaces/IData';
 import { nanoid } from 'nanoid';
 import { normalizeLanes } from 'utils/normalizers';
-import { IItem } from 'interfaces/IItem';
 import groupBy from 'utils/groupBy';
 import dataReducer, { Types } from 'reducer';
 
 const initialState: IState = {
   lanes: {},
   items: {},
+  placeholder: {},
 };
 
 const DataContext = createContext<{
@@ -47,13 +47,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const lanes = storage.get('lanes');
     const items = storage.get('items');
     if (lanes) {
-      dispatch({ type: Types.SET_LANES, payload: lanes });
+      const normalizedData = normalizeLanes(lanes);
+      dispatch({
+        type: Types.SET_LANES,
+        payload: normalizedData,
+      });
     } else {
       const data = [{ title: 'First Lane', id: nanoid() }];
       const normalizedData = normalizeLanes(data);
       dispatch({
         type: Types.SET_LANES,
-        payload: normalizedData.entities.lanes || {},
+        payload: normalizedData,
       });
     }
     if (items) {

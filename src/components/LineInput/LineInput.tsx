@@ -45,6 +45,7 @@ const LineInput = (props: {
     e.preventDefault();
     props.onSubmit(value);
     setEdit(false);
+    setValue('');
   };
 
   return (

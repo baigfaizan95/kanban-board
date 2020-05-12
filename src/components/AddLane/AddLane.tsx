@@ -25,20 +25,6 @@ const styles = makeStyles(() => {
       display: 'flex',
       alignItems: 'center',
     },
-    input: {
-      width: '100%',
-      '& .MuiInput-underline:after, .MuiInput-underline:before, .MuiInput-underline:hover': {
-        borderBottomColor: 'white !important',
-      },
-      '& .MuiInputBase-input': {
-        color: 'white',
-      },
-      '& .MuiOutlinedInput-root': {
-        '& fieldset': {
-          borderColor: 'red',
-        },
-      },
-    },
   };
 });
 

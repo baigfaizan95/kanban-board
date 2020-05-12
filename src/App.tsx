@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 
 /* Components */
-import Dropper from 'components/Dropper';
-import { DragStart, DropResult, DragUpdate } from 'react-beautiful-dnd';
+import {
+  DragStart,
+  DropResult,
+  DragUpdate,
+  DragDropContext,
+  Droppable,
+} from 'react-beautiful-dnd';
 import LaneWrapper from 'components/LaneWrapper';
 import getDraggedDom from 'utils/getDraggedDom';
 import useData from 'hooks/withData';
@@ -45,19 +50,13 @@ const styles = makeStyles(() => {
   };
 });
 
-interface IPlaceholder {
-  clientHeight: number;
-  clientWidth: number;
-  clientX: number;
-}
-
 function App() {
   const classes = styles();
-  const [placeholderProps, setPlaceholderProps] = useState<
-    Partial<IPlaceholder>
-  >({});
 
-  const { state, dispatch } = useData();
+  const {
+    state: { lanes, placeholder, items },
+    dispatch,
+  } = useData();
 
   const handleDragStart = (event: DragStart) => {
     const draggedDOM = getDraggedDom(event.draggableId);
@@ -66,31 +65,65 @@ function App() {
       return;
     }
 
-    const { clientHeight, clientWidth } = draggedDOM;
-    const sourceIndex = event.source.index;
+    if (event.type === 'laneWrapper') {
+      const { clientHeight, clientWidth } = draggedDOM;
+      const sourceIndex = event.source.index;
 
-    setPlaceholderProps({
-      clientHeight,
-      clientWidth,
-      clientX: 8 + sourceIndex * 8 + sourceIndex * 280,
-    });
+      dispatch({
+        type: Types.SET_PLACEHOLDER,
+        payload: {
+          clientY: 0,
+          clientHeight,
+          clientWidth,
+          clientX: 8 + sourceIndex * 8 + sourceIndex * 280,
+          type: 'laneWrapper',
+        },
+      });
+    }
   };
 
   const handleDragEnd = (result: DropResult) => {
-    setPlaceholderProps({});
+    dispatch({ type: Types.SET_PLACEHOLDER, payload: {} });
     if (!result.destination) {
       return;
     }
+    if (result.type === 'laneWrapper') {
+      const items = reOrder(
+        Object.values(lanes),
+        result.source.index,
+        result.destination.index
+      );
 
-    const items = reOrder(
-      Object.values(state.lanes),
-      result.source.index,
-      result.destination.index
-    );
+      const normalizedData = normalizeLanes(items);
 
-    const normalizedData = normalizeLanes(items);
-
-    dispatch({ type: Types.SET_LANES, payload: normalizedData.entities.lanes });
+      dispatch({ type: Types.SET_LANES, payload: normalizedData });
+    } else if (result.type === 'lane') {
+      const sourceParentId = result.source.droppableId;
+      const destParentId = result.destination.droppableId;
+      const sourceSubItems = items[sourceParentId];
+      const destSubItems = items[destParentId] || [];
+      const sourceIndex = result.source.index;
+      const destIndex = result.destination.index;
+      if (sourceParentId === destParentId) {
+        const data = reOrder(sourceSubItems, sourceIndex, destIndex);
+        dispatch({
+          type: Types.UPDATE_LANE_ITEMS,
+          payload: { laneId: sourceParentId, data },
+        });
+      } else {
+        const [draggedItem] = sourceSubItems.splice(sourceIndex, 1);
+        dispatch({
+          type: Types.UPDATE_LANE_ITEMS,
+          payload: { laneId: sourceParentId, data: sourceSubItems },
+        });
+        draggedItem.laneId = destParentId;
+        destSubItems.splice(destIndex, 0, draggedItem);
+        dispatch({
+          type: Types.UPDATE_LANE_ITEMS,
+          payload: { laneId: destParentId, data: destSubItems },
+        });
+      }
+    }
   };
 
   const handleDragUpdate = (event: DragUpdate) => {
@@ -103,50 +136,93 @@ function App() {
     if (!draggedDOM) {
       return;
     }
-
     const { clientHeight, clientWidth } = draggedDOM;
     const destinationIndex = event.destination.index;
+    const sourceIndex = event.source.index;
 
-    setPlaceholderProps({
-      clientHeight,
-      clientWidth,
-      clientX: 8 + destinationIndex * 8 + destinationIndex * 280,
-    });
+    if (event.type === 'laneWrapper') {
+      dispatch({
+        type: Types.SET_PLACEHOLDER,
+        payload: {
+          type: 'laneWrapper',
+          clientY: 0,
+          clientHeight,
+          clientWidth,
+          clientX: 8 + destinationIndex * 8 + destinationIndex * 280,
+        },
+      });
+    } else if (event.type === 'lane') {
+      const childrenArray = [...draggedDOM.parentNode!.children];
+      const movedItem = childrenArray[sourceIndex];
+      childrenArray.splice(sourceIndex, 1);
+
+      const updatedArray = [
+        ...childrenArray.slice(0, destinationIndex),
+        movedItem,
+        ...childrenArray.slice(destinationIndex + 1),
+      ];
+
+      const clientY =
+        49 +
+        updatedArray.slice(0, destinationIndex).reduce((total, curr) => {
+          const style = window.getComputedStyle(curr);
+          const marginBottom = parseFloat(style.marginBottom);
+          const marginTop = parseFloat(style.marginTop);
+          return total + curr.clientHeight + marginBottom + marginTop;
+        }, 0);
+
+      dispatch({
+        type: Types.SET_PLACEHOLDER,
+        payload: {
+          type: 'lane',
+          clientHeight,
+          clientWidth,
+          clientX: 6,
+          clientY,
+        },
+      });
+    }
   };
 
   return (
     <div className={classes.root}>
-      <Dropper
+      <DragDropContext
+        onDragEnd={handleDragEnd}
         onDragStart={handleDragStart}
         onDragUpdate={handleDragUpdate}
-        onDragEnd={handleDragEnd}
-        direction='horizontal'
-        droppableId='wrapper'
       >
-        {(provided, snapshot) => (
-          <div
-            {...provided.droppableProps}
-            ref={provided.innerRef}
-            className={classes.wrapper}
-          >
-            {Object.keys(state.lanes).map((key, i) => (
-              <LaneWrapper id={key} index={i} key={key} />
-            ))}
-            {provided.placeholder}
-            {!!Object.keys(placeholderProps).length && snapshot.isDraggingOver && (
-              <ItemPlaceholder
-                style={{
-                  top: 0,
-                  left: placeholderProps.clientX,
-                  height: placeholderProps.clientHeight,
-                  width: placeholderProps.clientWidth,
-                }}
-              />
-            )}
-            <AddLane />
-          </div>
-        )}
-      </Dropper>
+        <Droppable
+          direction='horizontal'
+          droppableId='wrapper'
+          type='laneWrapper'
+        >
+          {(provided, snapshot) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className={classes.wrapper}
+            >
+              {Object.keys(lanes).map((key, i) => (
+                <LaneWrapper id={key} index={i} key={key} />
+              ))}
+              {provided.placeholder}
+              {!!Object.keys(placeholder).length &&
+                placeholder.type === 'laneWrapper' &&
+                snapshot.isDraggingOver && (
+                  <ItemPlaceholder
+                    style={{
+                      top: placeholder.clientY,
+                      left: placeholder.clientX,
+                      height: placeholder.clientHeight,
+                      width: placeholder.clientWidth,
+                    }}
+                  />
+                )}
+              <AddLane />
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 }
