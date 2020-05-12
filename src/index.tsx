@@ -6,19 +6,20 @@ import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import theme from 'styles';
 import WebFont from 'webfontloader';
+import { DataProvider } from 'hooks/withData';
 
 WebFont.load({
   google: {
-    families: [
-      'Pangolin:300,400,700,900&display=swap',
-    ],
+    families: ['Pangolin:300,400,700,900&display=swap'],
   },
 });
 
 ReactDOM.render(
   <ThemeProvider theme={theme}>
     <CssBaseline>
-      <App />
+      <DataProvider>
+        <App />
+      </DataProvider>
     </CssBaseline>
   </ThemeProvider>,
   document.getElementById('root')

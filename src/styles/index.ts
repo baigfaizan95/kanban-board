@@ -27,7 +27,6 @@ const theme = createMuiTheme({
           textDecoration: 'none',
         },
         html: {
-          fontSize: '10px',
           scrollBehavior: 'smooth',
           height: '100%',
           position: 'relative',
@@ -37,6 +36,7 @@ const theme = createMuiTheme({
           fontFamily: variables.fontFamily,
           height: '100%',
           position: 'relative',
+          backgroundColor: variables.white,
         },
         root: {
           height: '100%',
@@ -46,12 +46,17 @@ const theme = createMuiTheme({
     },
   },
   typography: {
-    htmlFontSize: 10,
-    fontSize: 17,
     fontFamily: variables.fontFamily,
     button: {
-      fontSize: '1.6rem',
       textTransform: 'initial',
+    },
+  },
+  palette: {
+    primary: {
+      main: variables.black,
+    },
+    secondary: {
+      main: variables.black2,
     },
   },
 });

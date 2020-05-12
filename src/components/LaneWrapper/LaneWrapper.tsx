@@ -1,8 +1,10 @@
 import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
-import variables from 'styles/variables';
 import Dragger from 'components/Dragger';
+import { DraggingStyle, NotDraggingStyle } from 'react-beautiful-dnd';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
+import Lane from 'components/Lane';
 
 const styles = makeStyles(() => {
   return {
@@ -11,44 +13,40 @@ const styles = makeStyles(() => {
       verticalAlign: 'top',
       whiteSpace: 'nowrap',
       flex: '1',
-      height: '100%',
+      maxHeight: '100%',
       width: '280px',
       margin: '0 4px',
-      borderRadius: '6px',
       '&:first-child': {
         marginLeft: '8px',
       },
-      '&:last-child': {
-        marginRight: '8px',
-      },
-      background: variables.darkGrey,
     },
   };
 });
 
-const getItemStyle = (isDragging: boolean, draggableStyle: any) => ({
+const getItemStyle = (
+  draggableStyle: DraggingStyle | NotDraggingStyle
+): CSSProperties => ({
   userSelect: 'none',
   ...draggableStyle,
 });
 
-const Lanes = ({ index }: { index: number }) => {
+const LaneWrapper = ({ index, id }: { id: string; index: number }) => {
   const classes = styles();
   return (
-    <Dragger draggableId={`wrapper-item-${index}`} index={index}>
+    <Dragger draggableId={`wrapper-item-${id}`} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={classes.root}
-          style={getItemStyle(
-            snapshot.isDragging,
-            provided.draggableProps.style
-          )}
-        />
+          style={getItemStyle(provided.draggableProps.style || {})}
+        >
+          <Lane id={id} />
+        </div>
       )}
     </Dragger>
   );
 };
 
-export default Lanes;
+export default LaneWrapper;

@@ -6,10 +6,14 @@ import {
   DroppableStateSnapshot,
   DropResult,
   ResponderProvided,
+  DragStart,
+  DragUpdate,
 } from 'react-beautiful-dnd';
 
 interface IDropper {
-  onDragEnd: (result: DropResult, provided: ResponderProvided) => void;
+  onDragEnd(result: DropResult, provided: ResponderProvided): void;
+  onDragStart?(initial: DragStart, provided: ResponderProvided): void;
+  onDragUpdate?(initial: DragUpdate, provided: ResponderProvided): void;
   droppableId: string;
   direction?: 'vertical' | 'horizontal';
   children(
@@ -23,9 +27,15 @@ const Dropper = ({
   droppableId,
   direction = 'vertical',
   children,
+  onDragStart,
+  onDragUpdate,
 }: IDropper) => {
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext
+      onDragEnd={onDragEnd}
+      onDragStart={onDragStart}
+      onDragUpdate={onDragUpdate}
+    >
       <Droppable direction={direction} droppableId={droppableId}>
         {(provided, snapshot) => <>{children(provided, snapshot)}</>}
       </Droppable>
